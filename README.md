@@ -10,10 +10,10 @@ I'd previously captured checksums of all gpg files, doing this will give you a c
 ```ls -1 *.gpg | parallel -j 4 sha1sum {} > sha1sum.txt```
 
 ## Decrypting files 
-```
-seq 1 14442 | while read num; do ls -l $PATH/duplicity-full.20250109T044755Z.vol${num}.difftar.gpg;  echo "PASSWORD1234"|gpg --decrypt --batch --pinentry-mode loopback --passphrase-fd 0 /media/brian/HOUKRECOVERY/disk3/data/duplicity-full.20250109T044755Z.vol${num}.difftar.gpg >  $PATH/duplicity-full.20250109T044755Z.vol${num}.difftar   ; done```
-Depending on what chunk size you'd configured, this will leave you with thousands to millions of small files that need to be re-assembled. For my restore I had about 2.8T of archives which was several dozen million small files. 
+```seq 1 14442 | while read num; do ls -l $PATH/duplicity-full.20250109T044755Z.vol${num}.difftar.gpg;  echo "PASSWORD1234"|gpg --decrypt --batch --pinentry-mode loopback --passphrase-fd 0 /media/brian/HOUKRECOVERY/disk3/data/duplicity-full.20250109T044755Z.vol${num}.difftar.gpg >  $PATH/duplicity-full.20250109T044755Z.vol${num}.difftar   ; done```
 
+
+ 
 ## Extracting difftars/tarballs
 ```seq 1 14442 | while read num; do ls -l duplicity-full.20250109T044755Z.vol${num}.difftar; tar -xf duplicity-full.20250109T044755Z.vol${num}.difftar > duplicity-full.20250109T044755Z.vol${num}.difftar.log 2>&1 ; done```
 
