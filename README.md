@@ -10,7 +10,7 @@ I'd previously captured checksums of all gpg files, doing this will give you a c
 ```ls -1 *.gpg | parallel -j 4 sha1sum {} > sha1sum.txt```
 
 ## Decrypting files 
-```seq 1 14442 | while read num; do ls -l $PATH/duplicity-full.20250109T044755Z.vol${num}.difftar.gpg;  echo "PASSWORD1234"|gpg --decrypt --batch --pinentry-mode loopback --passphrase-fd 0 /media/brian/HOUKRECOVERY/disk3/data/duplicity-full.20250109T044755Z.vol${num}.difftar.gpg >  $PATH/duplicity-full.20250109T044755Z.vol${num}.difftar   ; done```
+```seq 1 14442 | while read num; do ls -l $PATH/duplicity-full.20250109T044755Z.vol${num}.difftar.gpg;  echo "PASSWORD1234"|gpg --decrypt --batch --pinentry-mode loopback --passphrase-fd 0 $PATH/duplicity-full.20250109T044755Z.vol${num}.difftar.gpg >  $PATH/duplicity-full.20250109T044755Z.vol${num}.difftar   ; done```
 
 
  
