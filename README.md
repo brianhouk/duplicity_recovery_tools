@@ -18,3 +18,20 @@ I'd previously captured checksums of all gpg files, doing this will give you a c
 ```seq 1 14442 | while read num; do ls -l duplicity-full.20250109T044755Z.vol${num}.difftar; tar -xf duplicity-full.20250109T044755Z.vol${num}.difftar > duplicity-full.20250109T044755Z.vol${num}.difftar.log 2>&1 ; done```
 
 ## Reassembling files
+
+Tool [reaassemble_multivol.py](./reassemble_multivol.py) will take a directory structure which already has had the files decrypted & extracted from tar and re-assemble those fragements from the multivol snapshot directory and deposit them into the snapshot direcctory. If you're recovering from a full backup/restore here that snapshot directory, when done will be the closest reflection of the filesystem you backed up.   
+
+```bash
+# ./reassemble_multivol.py  multivol_snapshot/ snapshot/ --dry-run
+[INFO] Multi-volume directory: /media/brian/HOUKRECOVERY/disk3/unencrypted/multivol_snapshot
+[INFO] Output directory: /media/brian/HOUKRECOVERY/disk3/unencrypted/snapshot
+[INFO] Workers: 3
+[INFO] Chunk size: 8,388,608 bytes
+[INFO] Cleanup after assembly: False
+[INFO] Dry run: True
+[INFO] Scanning for leaf directories...
+
+
+```
+
+Depending on your compute resources the above processes may take days. 
