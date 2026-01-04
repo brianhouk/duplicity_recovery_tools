@@ -9,6 +9,14 @@ I'd previously captured checksums of all gpg files, doing this will give you a c
 
 ```ls -1 *.gpg | parallel -j 4 sha1sum {} > sha1sum.txt```
 
+## Identification of compromised volumes / Potentially lost data
+```
+ ./verify_volumes.py 
+usage: verify_volumes.py [-h] [--manifest MANIFEST] [--checksum-file CHECKSUM_FILE] [--passphrase PASSPHRASE] [--show-all] [-v] backup_dir
+verify_volumes.py: error: the following arguments are required: backup_dir
+```
+[verify_volumes.py](./verify_volumes.py) can be used along with the manifest to identify what volumes may be corrupted and to identify what files in those volumes could be corrupted as well. 
+
 ## Decrypting files 
 ```seq 1 14442 | while read num; do ls -l $PATH/duplicity-full.20250109T044755Z.vol${num}.difftar.gpg;  echo "PASSWORD1234"|gpg --decrypt --batch --pinentry-mode loopback --passphrase-fd 0 $PATH/duplicity-full.20250109T044755Z.vol${num}.difftar.gpg >  $PATH/duplicity-full.20250109T044755Z.vol${num}.difftar   ; done```
 
@@ -22,7 +30,7 @@ I'd previously captured checksums of all gpg files, doing this will give you a c
 Tool [reaassemble_multivol.py](./reassemble_multivol.py) will take a directory structure which already has had the files decrypted & extracted from tar and re-assemble those fragements from the multivol snapshot directory and deposit them into the snapshot direcctory. If you're recovering from a full backup/restore here that snapshot directory, when done will be the closest reflection of the filesystem you backed up.   
 
 ```bash
-# ./reassemble_multivol.py  multivol_snapshot/ snapshot/ --dry-run
+./reassemble_multivol.py  multivol_snapshot/ snapshot/ --dry-run
 [INFO] Multi-volume directory: /media/brian/HOUKRECOVERY/disk3/unencrypted/multivol_snapshot
 [INFO] Output directory: /media/brian/HOUKRECOVERY/disk3/unencrypted/snapshot
 [INFO] Workers: 3
