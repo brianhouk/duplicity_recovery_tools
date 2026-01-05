@@ -30,14 +30,35 @@ verify_volumes.py: error: the following arguments are required: backup_dir
 Tool [reaassemble_multivol.py](./reassemble_multivol.py) will take a directory structure which already has had the files decrypted & extracted from tar and re-assemble those fragements from the multivol snapshot directory and deposit them into the snapshot direcctory. If you're recovering from a full backup/restore here that snapshot directory, when done will be the closest reflection of the filesystem you backed up.   
 
 ```bash
-./reassemble_multivol.py  multivol_snapshot/ snapshot/ --dry-run
-[INFO] Multi-volume directory: /media/brian/HOUKRECOVERY/disk3/unencrypted/multivol_snapshot
-[INFO] Output directory: /media/brian/HOUKRECOVERY/disk3/unencrypted/snapshot
+./reassemble_multivol.py multivol_snapshot snapshot  --cleanup -v
+[INFO] Multi-volume directory: ./multivol_snapshot
+[INFO] Output directory: ./snapshot
 [INFO] Workers: 3
 [INFO] Chunk size: 8,388,608 bytes
-[INFO] Cleanup after assembly: False
-[INFO] Dry run: True
+[INFO] Cleanup after assembly: True
+[INFO] Dry run: False
 [INFO] Scanning for leaf directories...
+[INFO] Found 556253 leaf directories to reassemble
+[INFO] Starting reassembly with 3 workers...
+[INFO] Progress: 10/556253 files reassembled (0.0%)
+[INFO] Progress: 20/556253 files reassembled (0.0%)
+[INFO] Progress: 30/556253 files reassembled (0.0%)
+[INFO] Progress: 40/556253 files reassembled (0.0%)
+[INFO] Progress: 50/556253 files reassembled (0.0%)
+[INFO] Progress: 60/556253 files reassembled (0.0%)
+[INFO] Progress: 70/556253 files reassembled (0.0%)
+[INFO] Progress: 80/556253 files reassembled (0.0%)
+[INFO] Progress: 90/556253 files reassembled (0.0%)
+[INFO] Progress: 100/556253 files reassembled (0.0%)
+[INFO] Progress: 110/556253 files reassembled (0.0%)
+[INFO] Progress: 120/556253 files reassembled (0.0%)
+[INFO] Progress: 130/556253 files reassembled (0.0%)
+[INFO] Progress: 140/556253 files reassembled (0.0%)
+[INFO] Progress: 150/556253 files reassembled (0.0%)
+[INFO] Progress: 160/556253 files reassembled (0.0%)
+[INFO] Progress: 170/556253 files reassembled (0.0%)
+[INFO] Progress: 180/556253 files reassembled (0.0%)
+
 
 
 ```
