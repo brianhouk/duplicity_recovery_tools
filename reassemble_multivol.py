@@ -102,24 +102,21 @@ class MultiVolReassembler:
             output_path = self.output_dir / relative_path
 
             if self.dry_run:
-                fragment_count = len(self._get_sorted_fragments(leaf_dir))
+                # For dry run, count fragments
+                fragment_count = sum(1 for _ in self._get_sorted_fragments(leaf_dir))
                 return (True, f"DRY RUN: Would assemble {fragment_count} fragments", output_path)
-
-            # Get sorted fragment files
-            fragments = self._get_sorted_fragments(leaf_dir)
-
-            if not fragments:
-                return (False, f"No numeric fragments found", output_path)
 
             # Create output directory if needed
             output_path.parent.mkdir(parents=True, exist_ok=True)
 
             # Assemble file using streaming to handle large files
-            bytes_written = self._stream_assemble(fragments, output_path)
+            # fragments is a generator, consumed during assembly
+            fragment_count, bytes_written = self._stream_assemble(
+                self._get_sorted_fragments(leaf_dir), output_path
+            )
 
-            # Verify all fragments were processed
-            if len(fragments) != len(self._get_sorted_fragments(leaf_dir)):
-                return (False, f"Fragment count changed during assembly", output_path)
+            if fragment_count == 0:
+                return (False, f"No numeric fragments found", output_path)
 
             # Cleanup if requested
             if self.cleanup:
@@ -136,13 +133,17 @@ class MultiVolReassembler:
                 if current % 10 == 0 or current == total:
                     logger.info(f"Progress: {current}/{total} files reassembled ({100*current/total:.1f}%)")
 
-            return (True, f"Assembled {len(fragments)} fragments → {bytes_written:,} bytes", output_path)
+            return (True, f"Assembled {fragment_count} fragments → {bytes_written:,} bytes", output_path)
 
         except Exception as e:
             return (False, f"Error: {str(e)}", leaf_dir)
 
-    def _get_sorted_fragments(self, directory: Path) -> List[Path]:
-        """Get list of fragment files sorted numerically"""
+    def _get_sorted_fragments(self, directory: Path):
+        """
+        Generator that yields fragment files in numeric order.
+        Memory-efficient for directories with hundreds of thousands of fragments.
+        """
+        # First pass: collect (number, filename) tuples (lightweight)
         fragments = []
 
         for item in directory.iterdir():
@@ -150,7 +151,8 @@ class MultiVolReassembler:
                 try:
                     # Only include files with numeric names
                     num = int(item.name)
-                    fragments.append((num, item))
+                    # Store just the number and filename string, not Path object
+                    fragments.append((num, item.name))
                 except ValueError:
                     logger.warning(f"Skipping non-numeric file: {item}")
                     continue
@@ -158,20 +160,31 @@ class MultiVolReassembler:
         # Sort by numeric value
         fragments.sort(key=lambda x: x[0])
 
-        # Return just the paths
-        return [path for _, path in fragments]
+        # Yield paths one at a time to avoid keeping full list in memory
+        for _, filename in fragments:
+            yield directory / filename
 
-    def _stream_assemble(self, fragments: List[Path], output_path: Path) -> int:
+        # Clean up the fragments list
+        del fragments
+
+    def _stream_assemble(self, fragments, output_path: Path) -> tuple:
         """
-        Assemble fragments using streaming I/O to handle large files
+        Assemble fragments using streaming I/O to handle large files.
+        Accepts a generator to minimize memory usage with large fragment counts.
+
+        Args:
+            fragments: Generator yielding Path objects for fragments in order
+            output_path: Where to write the assembled file
 
         Returns:
-            Total bytes written
+            (fragment_count, bytes_written)
         """
         bytes_written = 0
+        fragment_count = 0
 
         with output_path.open('wb') as output_file:
             for fragment_path in fragments:
+                fragment_count += 1
                 with fragment_path.open('rb') as fragment_file:
                     while True:
                         chunk = fragment_file.read(self.chunk_size)
@@ -180,7 +193,7 @@ class MultiVolReassembler:
                         output_file.write(chunk)
                         bytes_written += len(chunk)
 
-        return bytes_written
+        return (fragment_count, bytes_written)
 
     def run(self):
         """Main execution: find leaf directories and reassemble in parallel"""
@@ -195,11 +208,14 @@ class MultiVolReassembler:
         if not self.dry_run:
             self.output_dir.mkdir(parents=True, exist_ok=True)
 
-        # Setup progress tracking
-        manager = Manager()
-        progress = manager.Namespace()
-        progress.value = 0
-        progress.total = len(leaves)
+        # Setup progress tracking (only use Manager for multi-worker)
+        if self.workers == 1:
+            progress = None
+        else:
+            manager = Manager()
+            progress = manager.Namespace()
+            progress.value = 0
+            progress.total = len(leaves)
 
         logger.info(f"Starting reassembly with {self.workers} workers...")
 
@@ -208,8 +224,19 @@ class MultiVolReassembler:
         error_count = 0
 
         if self.workers == 1:
-            # Single-threaded for debugging
-            results = [self.reassemble_file(leaf, progress) for leaf in leaves]
+            # Single-threaded - process iteratively to avoid memory accumulation
+            for idx, leaf in enumerate(leaves, 1):
+                success, message, path = self.reassemble_file(leaf, None)
+
+                # Manual progress logging
+                if idx % 10 == 0 or idx == len(leaves):
+                    logger.info(f"Progress: {idx}/{len(leaves)} files reassembled ({100*idx/len(leaves):.1f}%)")
+                if success:
+                    success_count += 1
+                    logger.debug(f"✓ {path.name}: {message}")
+                else:
+                    error_count += 1
+                    logger.error(f"✗ {path}: {message}")
         else:
             # Multi-threaded processing
             with Pool(processes=self.workers) as pool:
@@ -219,14 +246,14 @@ class MultiVolReassembler:
                     [(leaf, progress) for leaf in leaves]
                 )
 
-        # Process results
-        for success, message, path in results:
-            if success:
-                success_count += 1
-                logger.debug(f"✓ {path.name}: {message}")
-            else:
-                error_count += 1
-                logger.error(f"✗ {path}: {message}")
+            # Process results
+            for success, message, path in results:
+                if success:
+                    success_count += 1
+                    logger.debug(f"✓ {path.name}: {message}")
+                else:
+                    error_count += 1
+                    logger.error(f"✗ {path}: {message}")
 
         # Summary
         logger.info("=" * 60)
