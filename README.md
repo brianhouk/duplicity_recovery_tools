@@ -58,6 +58,17 @@ Tool [reaassemble_multivol.py](./reassemble_multivol.py) will take a directory s
 [INFO] Progress: 160/556253 files reassembled (0.0%)
 [INFO] Progress: 170/556253 files reassembled (0.0%)
 [INFO] Progress: 180/556253 files reassembled (0.0%)
+.
+.
+.
+[INFO] Progress: 556253/556253 files reassembled (100.0%)
+[DEBUG] ✓ checksums.txt: Assembled 3360 fragments → 220,149,691 bytes
+[INFO] ============================================================
+[INFO] Reassembly complete!
+[INFO]   Success: 556253
+[INFO]   Errors:  0
+[INFO]   Total:   556253
+[INFO] ============================================================
 
 
 
